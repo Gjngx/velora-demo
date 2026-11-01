@@ -1,0 +1,46 @@
+name: Sync plugins from WordPress
+
+on:
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: wordpress-plugin-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Compare plugins with FTP
+        run: python3 .github/scripts/sync_plugins.py
+        env:
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          FTP_SERVER_DIR: ${{ secrets.FTP_SERVER_DIR }}
+
+      - name: Open or update plugin sync PR
+        uses: peter-evans/create-pull-request@v8.1.0
+        with:
+          add-paths: |
+            wp-content/plugins
+            .github/plugin-sync-state.json
+          branch: automation/sync-plugins
+          base: main
+          commit-message: 'chore: sync plugins with WordPress'
+          title: 'Sync plugins with WordPress'
+          body: |
+            This PR imports plugins installed or updated on WordPress and removes plugin files deleted there since the previous approved sync.
+
+            Review additions, deletions, plugin code, and licenses before merging. Plugin settings in the WordPress database are not included.

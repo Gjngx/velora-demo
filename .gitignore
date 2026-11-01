@@ -1,6 +1,8 @@
 .DS_Store
 .env
 node_modules/
+__pycache__/
+*.pyc
 wp-content/uploads/
 wp-content/cache/
 wp-content/upgrade/
