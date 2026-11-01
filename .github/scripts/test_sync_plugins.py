@@ -7,7 +7,7 @@ from ftplib import error_perm
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-from sync_plugins import apply_snapshot, download_tree, load_manifest  # noqa: E402
+from sync_plugins import apply_snapshot, download_tree, ftp_settings, load_manifest  # noqa: E402
 
 
 class FakeFTP:
@@ -92,6 +92,16 @@ class PluginSyncTests(unittest.TestCase):
             manifest.write_text('{"files": ["../outside.php"]}')
             with self.assertRaisesRegex(RuntimeError, "Unsafe path"):
                 load_manifest(manifest)
+
+    def test_trims_ftp_secrets_like_deploy_action(self):
+        settings = ftp_settings({
+            "FTP_SERVER": " ftp.example.test\n",
+            "FTP_USERNAME": " user ",
+            "FTP_PASSWORD": " pass ",
+            "FTP_SERVER_DIR": " /htdocs/wp-content/ ",
+        })
+        self.assertEqual(settings["FTP_SERVER"], "ftp.example.test")
+        self.assertEqual(settings["FTP_SERVER_DIR"], "/htdocs/wp-content/")
 
 
 if __name__ == "__main__":

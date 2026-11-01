@@ -7,7 +7,9 @@ import json
 import os
 import posixpath
 import shutil
+import socket
 import tempfile
+import time
 from ftplib import FTP, error_perm
 from pathlib import Path
 
@@ -129,22 +131,41 @@ def apply_snapshot(source: Path, destination: Path, previous: set[str] | None) -
     return changed, removed, current
 
 
-def main() -> None:
+def ftp_settings(environ: dict[str, str]) -> dict[str, str]:
+    """Match the whitespace trimming used by the existing FTP deploy action."""
     required = ("FTP_SERVER", "FTP_USERNAME", "FTP_PASSWORD", "FTP_SERVER_DIR")
-    missing = [name for name in required if not os.environ.get(name)]
+    settings = {name: environ.get(name, "").strip() for name in required}
+    missing = [name for name, value in settings.items() if not value]
     if missing:
         raise RuntimeError("Missing FTP settings: " + ", ".join(missing))
+    return settings
+
+
+def connect_ftp(ftp: FTP, host: str) -> None:
+    """Retry temporary DNS failures without retrying invalid hostnames."""
+    for attempt in range(3):
+        try:
+            ftp.connect(host, 21)
+            return
+        except socket.gaierror as exc:
+            if exc.errno != socket.EAI_AGAIN or attempt == 2:
+                raise
+            time.sleep(5 * (attempt + 1))
+
+
+def main() -> None:
+    settings = ftp_settings(os.environ)
 
     repo = Path(__file__).resolve().parents[2]
     destination = repo / "wp-content" / "plugins"
     manifest_path = repo / ".github" / "plugin-sync-state.json"
-    remote = posixpath.join(os.environ["FTP_SERVER_DIR"].rstrip("/"), "plugins")
+    remote = posixpath.join(settings["FTP_SERVER_DIR"].rstrip("/"), "plugins")
 
     with tempfile.TemporaryDirectory(prefix="velora-plugins-") as staging_path:
         staging = Path(staging_path)
         with FTP(timeout=60) as ftp:
-            ftp.connect(os.environ["FTP_SERVER"], 21)
-            ftp.login(os.environ["FTP_USERNAME"], os.environ["FTP_PASSWORD"])
+            connect_ftp(ftp, settings["FTP_SERVER"])
+            ftp.login(settings["FTP_USERNAME"], settings["FTP_PASSWORD"])
             ftp.cwd(remote)
             downloaded = download_tree(ftp, staging)
         changed, removed, current = apply_snapshot(staging, destination, load_manifest(manifest_path))
