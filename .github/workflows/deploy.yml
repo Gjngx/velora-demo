@@ -35,6 +35,8 @@ jobs:
           port: 21
           local-dir: ./wp-content/
           server-dir: ${{ secrets.FTP_SERVER_DIR }}
+          # Keep this file on the FTP server so later runs upload only changed files.
+          state-name: .ftp-deploy-sync-state.json
           dangerous-clean-slate: false
           exclude: |
             **/.git*
