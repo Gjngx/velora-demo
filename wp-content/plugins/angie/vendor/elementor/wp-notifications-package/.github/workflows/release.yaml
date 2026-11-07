@@ -1,0 +1,73 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      LEVEL:
+        description: ''
+        type: choice
+        required: true
+        default: patch
+        options: 
+        - patch
+        - minor
+        - major
+jobs:
+  release:
+    if: github.ref_name == 'main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Get Latest Tag 
+        run: echo "VERSION=$(git tag '--sort=authordate' | tail -1)" >> $GITHUB_ENV
+
+      - uses: actions-ecosystem/action-bump-semver@v1
+        id: version
+        with:
+          current_version: ${{ env.VERSION }}
+          level: ${{ github.event.inputs.LEVEL }}
+          
+      - name: Update Custom JSON Version file
+        run: |
+          CUSTOM_FILE="composer.json"
+          VERSION_FIELD="version"
+          NEW_VERSION="${{ steps.version.outputs.new_version }}"
+
+          # Update the specific field in the JSON file
+          jq ".${VERSION_FIELD} = \"${NEW_VERSION}\"" "$CUSTOM_FILE" > "${CUSTOM_FILE}.tmp" && mv "${CUSTOM_FILE}.tmp" "$CUSTOM_FILE"
+
+          echo "Updated file content:"
+          cat "$CUSTOM_FILE"
+
+          git -c "user.name=Bot" -c "user.email=bot@cloud-gitops" commit --allow-empty -am "Bump $CUSTOM_FILE ${VERSION_FIELD} to ${NEW_VERSION}"
+          git push
+          echo "LAST_SHA=`git rev-parse HEAD`" >> $GITHUB_ENV
+
+      - name: Changelog
+        uses: mikepenz/release-changelog-builder-action@v4.2.0
+        id: Changelog
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          toTag: "${{ github.ref }}"
+          
+      - name: Create Release with gh-release
+        uses: ncipollo/release-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ steps.version.outputs.new_version }}
+          name: "${{ steps.version.outputs.new_version }}"
+          body: |
+            By: ${{ github.actor }} 
+            Changelog:
+            ${{ steps.Changelog.outputs.changelog }}
+          commit: ${{ env.LAST_SHA }}
+

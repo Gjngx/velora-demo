@@ -1,0 +1,131 @@
+body.admin-bar {
+    --angie-sidebar-z-index: 99999; /* above WP admin bar */
+}
+
+
+#angie-body-top-padding {
+    height: 0;
+    transition: height 0.3s ease-in-out;
+}
+
+body.angie-sidebar-transitioning #wpadminbar {
+    transition: var(--angie-sidebar-transition) !important;
+}
+
+
+/* LTR Layout (default) - Push content to the right */
+@media (min-width: 768px) {
+    body.angie-sidebar-active #angie-body-top-padding {
+        width: 100%;
+        height: 0;
+    }
+
+    /* Push WordPress Admin Bar - LTR */
+    body.angie-sidebar-active #wpadminbar {
+        inset-inline-start: var(--angie-sidebar-width) !important;
+        inset-inline-end: 0 !important;
+        width: calc(100% - var(--angie-sidebar-width)) !important;
+        margin-top: 0;
+    }
+
+    body.angie-sidebar-active #wpfooter {
+        bottom: 0 !important;
+    }
+
+    body.angie-sidebar-active #adminmenuback {
+        top: 0 !important;
+    }
+
+    html.angie-sidebar-active {
+        margin-inline-end: 0 !important;
+    }
+
+    body.angie-sidebar-active #adminmenuwrap {
+        margin-bottom: 0;
+    }
+
+    body.angie-sidebar-active .woocommerce-layout__header{
+        margin-top: 0;
+    }
+
+    body.angie-sidebar-active #image-optimization-top-bar > div {
+        width: 100% !important;
+    }
+    
+    body.angie-sidebar-active .theme-wrap {
+        z-index: var(--angie-sidebar-z-index) !important;
+        width: calc(100% - var(--angie-sidebar-width)) !important;
+    }
+    
+    body.angie-sidebar-active .e-global__popover {
+        z-index: 1201 !important;
+    }
+    
+    body.angie-sidebar-active #site-editor {
+       margin-inline-start: var(--angie-sidebar-width) !important;
+    }
+}
+
+
+/* WordPress Editor Fullscreen Mode Adjustments */
+body {
+    --admin-menu-width: 160px;
+}
+
+body.folded {
+    --admin-menu-width: 36px;
+}
+
+body.is-fullscreen-mode {
+    --admin-menu-width: 0px;
+}
+
+body.block-editor-page.angie-sidebar-active.block-editor-page .interface-interface-skeleton {
+    inset-inline-start: calc(var(--angie-sidebar-width) + var(--admin-menu-width)) !important;
+    inset-inline-end: 0 !important;
+    top: 32px !important;
+    margin-bottom: 0 !important;
+}
+
+.block-editor-page.angie-sidebar-active.block-editor-page.is-fullscreen-mode .interface-interface-skeleton {
+    top: 0 !important;
+}
+
+/* Ensure interface skeleton transitions smoothly */
+body.block-editor-page.angie-sidebar-transitioning .interface-interface-skeleton {
+    transition: var(--angie-sidebar-transition) !important;
+}
+
+body.angie-sidebar-active iframe.elementor-app-iframe {
+    width: calc(100% - var(--angie-sidebar-width)) !important;
+    margin-inline-start: var(--angie-sidebar-width);
+}
+
+/* Mobile responsive behavior */
+@media (max-width: 768px) {
+    #angie-sidebar-container {
+        display: none;
+    }
+
+    body.angie-sidebar-active {
+        padding-inline-start: 0 !important;
+        padding-inline-end: 0 !important;
+    }
+
+    body.angie-sidebar-active #wpadminbar{
+        inset-inline-start: 0 !important;
+        inset-inline-end: 0 !important;
+        width: 100% !important;
+    }
+
+    /* Reset fullscreen mode adjustments on mobile */
+    body.angie-sidebar-active .interface-interface-skeleton{
+        inset-inline-start: 0 !important;
+        inset-inline-end: 0 !important;
+    }
+}
+
+/* not in admin add a pixel margin top 3px - apply consistently */
+body:not(.wp-admin) #angie-sidebar-container {
+    margin-top: 3px;
+}

@@ -5,6 +5,7 @@ __pycache__/
 *.pyc
 wp-content/uploads/
 wp-content/cache/
+wp-content/debug.log
 wp-content/upgrade/
 wp-content/upgrade-temp-backup/
 wp-content/backups/
