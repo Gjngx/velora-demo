@@ -19,6 +19,8 @@ concurrency:
 
 jobs:
   deploy:
+    # Temporarily pause uploads to FTP. Remove this guard to resume deployment.
+    if: ${{ false }}
     runs-on: ubuntu-latest
 
     steps:
